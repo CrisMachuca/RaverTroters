@@ -23,7 +23,12 @@ def login():
     return jsonify(message="Invalid credentials"), 401
 
 @main.route('/products', methods=['GET'])
-@jwt_required()
 def get_products():
     products = Product.query.all()
-    return jsonify([product.name for product in products])
+    return jsonify([{
+        'id': product.id,
+        'name': product.name,
+        'description': product.description,
+        'price': product.price,
+        'category': product.category
+    } for product in products])

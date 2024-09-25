@@ -1,18 +1,33 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect,useState } from 'react'
+import API from './api'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await API.get('/products');
+        setProducts(response.data);
+      } catch (error) {
+        console.error('Error fetching products', error);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
-    <div className="bg-red-500 p-4 text-white">
-      <h1 className="text-3xl font-bold underline">
-        Hello, RaverTroter!
-      </h1>
+    <div>
+      <h1 className="text-3xl font-bold text-red-500">Products</h1>
+      <ul>
+        {products.map(product => (
+          <li key={product.id} className="text-gray-900">{product.name}</li>
+        ))}
+      </ul>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
