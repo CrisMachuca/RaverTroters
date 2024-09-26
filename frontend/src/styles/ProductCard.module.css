@@ -1,0 +1,12 @@
+.card {
+    transition: transform 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: scale(1.05);
+  }
+  
+  .image {
+    border-radius: 0.5rem;
+  }
+  

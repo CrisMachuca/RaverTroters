@@ -12,3 +12,4 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50), nullable=False)
+    is_featured = db.Column(db.Boolean, default=False)

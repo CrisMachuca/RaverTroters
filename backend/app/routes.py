@@ -32,3 +32,15 @@ def get_products():
         'price': product.price,
         'category': product.category
     } for product in products])
+
+@main.route('/featured-products', methods=['GET'])
+def get_featured_products():
+    products = Product.query.filter_by(is_featured=True).all()
+    return jsonify([{
+        'id': product.id,
+        'name': product.name,
+        'description': product.description,
+        'price': product.price,
+        'category': product.category,
+        'is_featured': product.is_featured
+    } for product in products])
