@@ -1,20 +1,24 @@
 import React from 'react';
+import { useCart } from '../context/cartContext'
 import styles from '../styles/ProductCard.module.css';
-import { motion } from 'framer-motion'
+
 
 function ProductCard({ product }) {
+  const { addToCart } = useCart();
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-white p-4 rounded-lg shadow-lg"
-    >
-      <img src={product.imageUrl} alt={product.name} className="w-full h-48 object-cover rounded" />
-      <h3 className="text-lg font-bold mt-2">{product.name}</h3>
+    <div className={`${styles.card} bg-white rounded-lg shadow-md p-4`}>
+      <img src={product.imageUrl} alt={product.name} className={`${styles.image} w-full h-48 object-cover`} />
+      <h2 className="text-xl font-bold mt-2">{product.name}</h2>
       <p className="text-gray-600">{product.description}</p>
       <p className="text-green-500 font-bold">${product.price}</p>
-    </motion.div>
+      <button
+        className="bg-blue-500 text-white font-bold py-2 px-4 rounded-full mt-4"
+        onClick={() => addToCart(product)}
+      >
+        Añadir al carrito
+      </button>
+    </div>
   );
 }
 
