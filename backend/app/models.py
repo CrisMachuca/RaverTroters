@@ -7,6 +7,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
     cart_items = relationship('Cart', back_populates='user', cascade='all, delete-orphan')
 
 class Product(db.Model):
@@ -16,6 +17,8 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50), nullable=False)
     is_featured = db.Column(db.Boolean, default=False)
+    views = db.Column(db.Integer, default=0)
+    sales = db.Column(db.Integer, default=0)
 
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)

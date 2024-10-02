@@ -1,25 +1,38 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import API from '../api';
 import { useCart } from '../context/cartContext';
-import styles from '../styles/Navbar.module.css';
 
 function Navbar() {
-  const { getCartQuantity, clearCart, fetchCart } = useCart(); // Importar fetchCart
-  const token = localStorage.getItem('token'); // Verificar si el token está en localStorage
+  const { getCartQuantity, clearCart } = useCart();
+  const [isAdmin, setIsAdmin] = useState(false); // Estado para verificar si es administrador
+  const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
-  // Función para manejar el cierre de sesión
-  const handleLogout = () => {
-    localStorage.removeItem('token'); // Eliminar el token de localStorage
-    clearCart(); // Limpiar el carrito al cerrar sesión
-    navigate('/'); // Redirigir al Home o a la página de login
-  };
-
   useEffect(() => {
-    if (token) {
-      fetchCart(); // Cargar el carrito cuando el usuario esté autenticado
-    }
-  }, [token]); // Ejecutar cuando cambie el token
+    const fetchUserData = async () => {
+      if (token) {
+        try {
+          const response = await API.get('/account', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setIsAdmin(response.data.is_admin); // Comprobar si el usuario es administrador
+        } catch (error) {
+          console.error('Error fetching user data', error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [token]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    clearCart();
+    navigate('/');
+  };
 
   return (
     <nav className="bg-gray-800 p-4">
@@ -31,14 +44,14 @@ function Navbar() {
 
           {token ? (
             <>
-              <Link to="/cart" className="text-white mr-4">
-                Carrito ({getCartQuantity()})
-              </Link>
+              <Link to="/cart" className="text-white mr-4">Carrito ({getCartQuantity()})</Link>
               <Link to="/account" className="text-white mr-4">Mi Cuenta</Link>
-              {/* Botón de Cerrar Sesión */}
-              <button onClick={handleLogout} className="text-white bg-red-600 px-4 py-2 rounded">
-                Cerrar Sesión
-              </button>
+
+              {isAdmin && (
+                <Link to="/admin/dashboard" className="text-white mr-4">Admin Dashboard</Link>
+              )}
+
+              <button onClick={handleLogout} className="text-white bg-red-600 px-4 py-2 rounded">Cerrar Sesión</button>
             </>
           ) : (
             <>

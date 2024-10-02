@@ -7,6 +7,7 @@ import Cart from './pages/Cart';
 import Account from './pages/Account';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import AdminDashboard from './pages/AdminDashboard';
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <Route path="/account" element={isAuthenticated ? <Account /> : <Navigate to="/login" />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
         </Routes>
       </Router>
     </CartProvider>
