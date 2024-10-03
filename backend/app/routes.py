@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import User, Product, Cart
+from .models import User, Product, Cart, Category
 from . import db
 
 main = Blueprint('main', __name__)
@@ -60,20 +60,26 @@ def get_products():
         'name': product.name,
         'description': product.description,
         'price': product.price,
-        'category': product.category,
+        'category': product.category.name if product.category else None,
+        'is_featured': product.is_featured,
         'views': product.views,
         'sales': product.sales
     } for product in products])
 # Products - featured
 @main.route('/featured-products', methods=['GET'])
 def get_featured_products():
-    products = Product.query.filter_by(is_featured=True).all()
+    category = request.args.get('category')
+    if category:
+        products = Product.query.join(Category).filter(Category.name == category, Product.is_featured == True).all()
+    else:
+        products = Product.query.filter_by(is_featured=True).all()
+
     return jsonify([{
         'id': product.id,
         'name': product.name,
         'description': product.description,
         'price': product.price,
-        'category': product.category,
+        'category': product.category.name if product.category else None,  # Asegurarse de que la categoría esté presente
         'is_featured': product.is_featured
     } for product in products])
 
@@ -210,11 +216,16 @@ def edit_product(product_id):
         return jsonify({"message": "Product not found"}), 404
     
     data = request.get_json()
+
+    # Actualizar los campos del producto
     product.name = data['name']
     product.description = data['description']
     product.price = data['price']
-    product.category = data['category']
     product.is_featured = data.get('is_featured', product.is_featured)
+
+    # Actualizar la categoría del producto
+    if 'category_id' in data:
+        product.category_id = data['category_id']
 
     db.session.commit()
     return jsonify({"message": "Product updated successfully"}), 200
@@ -244,3 +255,33 @@ def get_product_stats():
     } for product in products]
     
     return jsonify(product_stats), 200
+
+# CATEGORIES
+
+@main.route('/admin/categories', methods=['GET'])
+@admin_required
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([{'id': category.id, 'name': category.name} for category in categories])
+
+# Add new category
+@main.route('/admin/categories', methods=['POST'])
+@admin_required
+def add_category():
+    data = request.get_json()
+    new_category = Category(name=data['name'])
+    db.session.add(new_category)
+    db.session.commit()
+    return jsonify({'message': 'Category added successfully'}), 201
+
+# Delete category
+@main.route('/admin/categories/<int:category_id>', methods=['DELETE'])
+@admin_required
+def delete_category(category_id):
+    category = Category.query.get(category_id)
+    if not category:
+        return jsonify({"message": "Category not found"}), 404
+
+    db.session.delete(category)
+    db.session.commit()
+    return jsonify({'message': 'Category deleted successfully'}), 200

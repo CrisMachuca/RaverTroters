@@ -1,6 +1,11 @@
 from . import db
 from sqlalchemy.orm import relationship
 
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    products = relationship('Product', back_populates='category', cascade='all, delete-orphan')
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -15,7 +20,8 @@ class Product(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
-    category = db.Column(db.String(50), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)  # Clave foránea
+    category = relationship('Category', back_populates='products')  # Relación con Category
     is_featured = db.Column(db.Boolean, default=False)
     views = db.Column(db.Integer, default=0)
     sales = db.Column(db.Integer, default=0)
