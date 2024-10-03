@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import API from '../api';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 function AdminDashboard() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);  
+  const [categories, setCategories] = useState([]);  // Para almacenar las categorías
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
     price: 0,
-    category_id: '',  
+    category_id: '',  // Se usará el id de la categoría seleccionada
     is_featured: false,
   });
-  const [newCategory, setNewCategory] = useState('');  
-  const [editingProduct, setEditingProduct] = useState(null);  // Para rastrear el producto que se está editando
+  const [newCategory, setNewCategory] = useState('');  // Estado para la nueva categoría
+  const [stats, setStats] = useState([]); // Estado para estadísticas de productos
+  const [isEditing, setIsEditing] = useState(false);  // Estado para mostrar el modal de edición
+  const [productToEdit, setProductToEdit] = useState(null);  // El producto seleccionado para editar
 
-  // Cargar productos y categorías al iniciar
+  // Cargar productos y estadísticas al iniciar
   const fetchProducts = async () => {
     try {
       const response = await API.get('/products');
@@ -26,6 +29,7 @@ function AdminDashboard() {
 
   const fetchCategories = async () => {
     const token = localStorage.getItem('token');
+    
     try {
       const response = await API.get('/admin/categories', {
         headers: {
@@ -38,9 +42,24 @@ function AdminDashboard() {
     }
   };
 
+  const fetchStats = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await API.get('/admin/product-stats', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setStats(response.data); // Almacenar estadísticas
+    } catch (error) {
+      console.error('Error fetching product stats:', error);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchStats();  // Llamar a la función para obtener estadísticas
   }, []);
 
   // Manejar los cambios en los inputs
@@ -62,59 +81,8 @@ function AdminDashboard() {
         },
       });
       fetchProducts(); // Refrescar la lista de productos
-      setNewProduct({ name: '', description: '', price: 0, category_id: '', is_featured: false }); // Limpiar el formulario
     } catch (error) {
       console.error('Error adding product:', error);
-    }
-  };
-
-  // Iniciar la edición de un producto
-  const handleEditClick = (product) => {
-    setEditingProduct(product);
-    setNewProduct({
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category_id: product.category_id,
-      is_featured: product.is_featured,
-    });
-  };
-
-  // Actualizar un producto
-  const handleUpdateProduct = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      await API.put(`/admin/products/${editingProduct.id}`, newProduct, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchProducts(); // Refrescar la lista de productos
-      setEditingProduct(null); // Salir del modo de edición
-      setNewProduct({ name: '', description: '', price: 0, category_id: '', is_featured: false }); // Limpiar el formulario
-    } catch (error) {
-      console.error('Error updating product:', error);
-    }
-  };
-
-  // Cancelar la edición
-  const handleCancelEdit = () => {
-    setEditingProduct(null);
-    setNewProduct({ name: '', description: '', price: 0, category_id: '', is_featured: false });
-  };
-
-  // Eliminar producto
-  const handleDeleteProduct = async (productId) => {
-    const token = localStorage.getItem('token');
-    try {
-      await API.delete(`/admin/products/${productId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchProducts(); // Refrescar la lista de productos
-    } catch (error) {
-      console.error('Error deleting product:', error);
     }
   };
 
@@ -149,15 +117,66 @@ function AdminDashboard() {
     }
   };
 
+  // Manejar la edición de productos
+  const handleEditProduct = (product) => {
+    setProductToEdit(product);
+    setIsEditing(true);  // Mostrar el modal de edición
+  };
+
+  // Guardar cambios en un producto
+  const handleSaveChanges = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      await API.put(`/admin/products/${productToEdit.id}`, productToEdit, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      fetchProducts(); // Refrescar productos
+      setIsEditing(false); // Cerrar el modal
+    } catch (error) {
+      console.error('Error updating product:', error);
+    }
+  };
+
+  // Eliminar producto
+  const handleDeleteProduct = async (productId) => {
+    const token = localStorage.getItem('token');
+    try {
+      await API.delete(`/admin/products/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      fetchProducts(); // Refrescar la lista de productos
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto mt-8">
       <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
 
-      {/* Formulario para agregar o editar un producto */}
+      {/* Gráfico de estadísticas de ventas y visitas */}
       <div className="mb-8">
-        <h2 className="text-xl font-bold">
-          {editingProduct ? 'Editar Producto' : 'Agregar Producto'}
-        </h2>
+        <h2 className="text-xl font-bold">Estadísticas de Ventas y Visitas</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={stats}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="sales" fill="#82ca9d" name="Ventas" />
+            <Bar dataKey="views" fill="#8884d8" name="Visitas" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Formulario para agregar un nuevo producto */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold">Agregar Producto</h2>
         <input
           type="text"
           name="name"
@@ -207,22 +226,9 @@ function AdminDashboard() {
           />
           Producto destacado
         </label>
-
-        {/* Botones para agregar o actualizar producto */}
-        {editingProduct ? (
-          <>
-            <button onClick={handleUpdateProduct} className="bg-yellow-500 text-white px-4 py-2">
-              Actualizar Producto
-            </button>
-            <button onClick={handleCancelEdit} className="bg-gray-500 text-white px-4 py-2">
-              Cancelar
-            </button>
-          </>
-        ) : (
-          <button onClick={handleAddProduct} className="bg-green-500 text-white px-4 py-2">
-            Agregar Producto
-          </button>
-        )}
+        <button onClick={handleAddProduct} className="bg-green-500 text-white px-4 py-2">
+          Agregar Producto
+        </button>
       </div>
 
       {/* Gestión de categorías */}
@@ -254,7 +260,7 @@ function AdminDashboard() {
         </ul>
       </div>
 
-      {/* Lista de productos */}
+      {/* Lista de productos existentes */}
       <h2 className="text-xl font-bold mb-4">Lista de Productos</h2>
       <ul>
         {products.map((product) => (
@@ -268,7 +274,7 @@ function AdminDashboard() {
             </div>
             <div>
               <button
-                onClick={() => handleEditClick(product)}
+                onClick={() => handleEditProduct(product)}
                 className="bg-yellow-500 text-white px-4 py-2 mr-2"
               >
                 Editar
@@ -283,6 +289,44 @@ function AdminDashboard() {
           </li>
         ))}
       </ul>
+
+      {/* Modal de edición */}
+      {isEditing && productToEdit && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-8">
+            <h2 className="text-2xl mb-4">Editar Producto</h2>
+            <input
+              type="text"
+              name="name"
+              placeholder="Nombre"
+              value={productToEdit.name}
+              onChange={(e) => setProductToEdit({ ...productToEdit, name: e.target.value })}
+              className="border p-2 mb-4 w-full"
+            />
+            <textarea
+              name="description"
+              placeholder="Descripción"
+              value={productToEdit.description}
+              onChange={(e) => setProductToEdit({ ...productToEdit, description: e.target.value })}
+              className="border p-2 mb-4 w-full"
+            />
+            <input
+              type="number"
+              name="price"
+              placeholder="Precio"
+              value={productToEdit.price}
+              onChange={(e) => setProductToEdit({ ...productToEdit, price: e.target.value })}
+              className="border p-2 mb-4 w-full"
+            />
+            <button onClick={handleSaveChanges} className="bg-green-500 text-white px-4 py-2">
+              Guardar Cambios
+            </button>
+            <button onClick={() => setIsEditing(false)} className="bg-gray-500 text-white px-4 py-2 ml-2">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
