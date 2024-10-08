@@ -4,6 +4,16 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from .config import Config
 from flask_cors import CORS
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# Configuración de Cloudinary
+cloudinary.config(
+  cloud_name = "dpgju6aj2",  
+  api_key = "182768845167919",        
+  api_secret = "UzhOlxQhJ8Z9NQxW8iVGxqy66Jg"   
+)
 
 db = SQLAlchemy()
 migrate = Migrate()

@@ -4,8 +4,25 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from .models import User, Product, Cart, Category
 from . import db
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 main = Blueprint('main', __name__)
+
+# Admin - Check if user is admin
+def admin_required(fn):    
+    @wraps(fn)
+    @jwt_required()
+    def decorated_function(*args, **kwargs):
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+        if not user.is_admin:
+            return jsonify({"message": "Unauthorized: Admin access only"}), 403
+        return fn(*args, **kwargs)
+    return decorated_function
 
 # Registro de usuarios
 @main.route('/register', methods=['POST'])
@@ -63,14 +80,16 @@ def get_products():
         'category': product.category.name if product.category else None,
         'is_featured': product.is_featured,
         'views': product.views,
-        'sales': product.sales
+        'sales': product.sales,
+        'image_url': product.image_url
     } for product in products])
-# Products - featured
+
+# Obtener productos destacados
 @main.route('/featured-products', methods=['GET'])
 def get_featured_products():
-    category = request.args.get('category')
-    if category:
-        products = Product.query.join(Category).filter(Category.name == category, Product.is_featured == True).all()
+    category_id = request.args.get('category')  # Opción para filtrar por categoría si se proporciona
+    if category_id:
+        products = Product.query.filter_by(is_featured=True, category_id=category_id).all()
     else:
         products = Product.query.filter_by(is_featured=True).all()
 
@@ -79,135 +98,43 @@ def get_featured_products():
         'name': product.name,
         'description': product.description,
         'price': product.price,
-        'category': product.category.name if product.category else None,  # Asegurarse de que la categoría esté presente
-        'is_featured': product.is_featured
+        'category': product.category.name if product.category else None,
+        'is_featured': product.is_featured,
+        'views': product.views,
+        'sales': product.sales,
+        'image_url': product.image_url
     } for product in products])
 
-# Cart
-@main.route('/cart', methods=['GET'])
-@jwt_required()
-def get_cart():
-    user_id = get_jwt_identity()
-    cart_items = Cart.query.filter_by(user_id=user_id).all()
 
-    cart_data = []
-    for item in cart_items:
-        cart_data.append({
-            'id': item.product.id,
-            'name': item.product.name,
-            'price': item.product.price,
-            'quantity': item.quantity
-        })
-
-    return jsonify(cart_data), 200
-
-# Cart - Add products
-@main.route('/cart', methods=['POST'])
-@jwt_required()
-def add_to_cart():
-    user_id = get_jwt_identity()
-    data = request.get_json()
-
-    product_id = data['product_id']
-    quantity = data.get('quantity', 1)
-
-    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
-
-    if cart_item:
-        cart_item.quantity += quantity
-    else:
-        new_cart_item = Cart(user_id=user_id, product_id=product_id, quantity=quantity)
-        db.session.add(new_cart_item)
-
-    db.session.commit()
-
-    return jsonify({"message": "Product added to cart"}), 201
-
-# Cart - Delete products
-@main.route('/cart/<int:product_id>', methods=['DELETE'])
-@jwt_required()
-def remove_from_cart(product_id):
-    user_id = get_jwt_identity()
-    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
-
-    if cart_item:
-        db.session.delete(cart_item)
-        db.session.commit()
-        return jsonify({"message": "Product removed from cart"}), 200
-
-    return jsonify({"message": "Product not found in cart"}), 404
-
-# Cart - update quantity
-@main.route('/cart', methods=['PUT'])
-@jwt_required()
-def update_cart():
-    user_id = get_jwt_identity()
-    data = request.get_json()
-
-    product_id = data['product_id']
-    quantity = data['quantity']
-
-    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
-
-    if cart_item:
-        cart_item.quantity = quantity
-        db.session.commit()
-        return jsonify({"message": "Cart updated"}), 200
-
-    return jsonify({"message": "Product not found in cart"}), 404
-
-# Ruta para registrar una venta
-@main.route('/checkout', methods=['POST'])
-@jwt_required()
-def checkout():
-    user_id = get_jwt_identity()
-    data = request.get_json()
-
-    # Suponiendo que data contiene una lista de productos comprados
-    for item in data['products']:
-        product = Product.query.get(item['product_id'])
-        product.sales += item['quantity']  # Incrementar las ventas por la cantidad comprada
-
-    db.session.commit()
-    return jsonify({"message": "Compra realizada con éxito"}), 200
-
-
-# Admin - Check if user is admin
-def admin_required(fn):    
-    @wraps(fn)
-    @jwt_required()
-    def decorated_function(*args, **kwargs):
-        user_id = get_jwt_identity()
-        user = User.query.get(user_id)
-        if not user or not user.is_admin:
-            return jsonify({"message": "Unauthorized"}), 403
-        return fn(*args, **kwargs)
-    return decorated_function
-
-# Admin - Dashboard
-@main.route('/admin/dashboard', methods=['GET'])
-@admin_required
-def admin_dashboard():
-    # Aqui se agregan las estadisticas del dashboard
-    return jsonify({"message": "Welcome to the admin dashboard"}), 200
-
-#Admin - add products
+# Admin - add products
 @main.route('/admin/products', methods=['POST'])
 @admin_required
 def add_product():
-    data = request.get_json()
+    data = request.form
+    image = request.files.get('image')
+
+    # Subir imagen a Cloudinary
+    if image:
+        upload_result = cloudinary.uploader.upload(image)
+        image_url = upload_result.get('secure_url')
+    else:
+        image_url = None
+
+    # Convertir el valor de is_featured a booleano
+    is_featured_value = data.get('is_featured', 'false').lower() == 'true'
+
     new_product = Product(
         name=data['name'],
         description=data['description'],
-        price=data['price'],
-        category=data['category'],
-        is_featured=data.get('is_featured', False)
+        price=float(data['price']),  # Convertir el precio a float
+        category_id=int(data['category_id']),  # Convertir el ID de categoría a entero
+        is_featured=is_featured_value,  # Usar el valor booleano correcto
+        image_url=image_url
     )
     db.session.add(new_product)
     db.session.commit()
     return jsonify({"message": "Product added successfully"}), 201
 
-# Admin - edit product
 @main.route('/admin/products/<int:product_id>', methods=['PUT'])
 @admin_required
 def edit_product(product_id):
@@ -215,20 +142,33 @@ def edit_product(product_id):
     if not product:
         return jsonify({"message": "Product not found"}), 404
     
-    data = request.get_json()
+    data = request.form
+    image = request.files.get('image')
 
-    # Actualizar los campos del producto
+    if image:
+        print(f"Image received: {image.filename}")  # Agrega este log para verificar si se recibe la imagen
+        upload_result = cloudinary.uploader.upload(image)
+        product.image_url = upload_result.get('secure_url')
+
+    # Validar otros campos
+    if not data.get('name') or not data.get('description') or not data.get('price'):
+        return jsonify({"message": "Missing required fields"}), 400
+
+    # Convertir is_featured a booleano si es string
+    is_featured_value = data.get('is_featured', 'false').lower() == 'true'
+
+    # Actualizar los campos
     product.name = data['name']
     product.description = data['description']
-    product.price = data['price']
-    product.is_featured = data.get('is_featured', product.is_featured)
+    product.price = float(data['price'])
+    product.is_featured = is_featured_value
 
-    # Actualizar la categoría del producto
-    if 'category_id' in data:
-        product.category_id = data['category_id']
+    if 'category_id' in data and data['category_id']:
+        product.category_id = int(data['category_id'])
 
     db.session.commit()
     return jsonify({"message": "Product updated successfully"}), 200
+
 
 # Admin - Delete product
 @main.route('/admin/products/<int:product_id>', methods=['DELETE'])

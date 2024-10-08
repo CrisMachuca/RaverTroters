@@ -4,20 +4,21 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 function AdminDashboard() {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);  // Para almacenar las categorías
+  const [categories, setCategories] = useState([]);
   const [newProduct, setNewProduct] = useState({
     name: '',
     description: '',
     price: 0,
-    category_id: '',  // Se usará el id de la categoría seleccionada
+    category_id: '',
     is_featured: false,
+    image: null,
   });
-  const [newCategory, setNewCategory] = useState('');  // Estado para la nueva categoría
-  const [stats, setStats] = useState([]); // Estado para estadísticas de productos
-  const [isEditing, setIsEditing] = useState(false);  // Estado para mostrar el modal de edición
-  const [productToEdit, setProductToEdit] = useState(null);  // El producto seleccionado para editar
+  const [newCategory, setNewCategory] = useState('');
+  const [stats, setStats] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [productToEdit, setProductToEdit] = useState(null);
 
-  // Cargar productos y estadísticas al iniciar
+  // Cargar productos, categorías y estadísticas al iniciar
   const fetchProducts = async () => {
     try {
       const response = await API.get('/products');
@@ -29,7 +30,11 @@ function AdminDashboard() {
 
   const fetchCategories = async () => {
     const token = localStorage.getItem('token');
-    
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
     try {
       const response = await API.get('/admin/categories', {
         headers: {
@@ -38,31 +43,43 @@ function AdminDashboard() {
       });
       setCategories(response.data);
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      if (error.response && error.response.status === 401) {
+        console.error('Unauthorized: Token may have expired or is invalid.');
+      } else {
+        console.error('Error fetching categories:', error);
+      }
     }
   };
 
   const fetchStats = async () => {
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
     try {
       const response = await API.get('/admin/product-stats', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      setStats(response.data); // Almacenar estadísticas
+      setStats(response.data);
     } catch (error) {
-      console.error('Error fetching product stats:', error);
+      if (error.response && error.response.status === 401) {
+        console.error('Unauthorized: Token may have expired or is invalid.');
+      } else {
+        console.error('Error fetching product stats:', error);
+      }
     }
   };
 
   useEffect(() => {
     fetchProducts();
     fetchCategories();
-    fetchStats();  // Llamar a la función para obtener estadísticas
+    fetchStats();
   }, []);
 
-  // Manejar los cambios en los inputs
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setNewProduct({
@@ -71,75 +88,89 @@ function AdminDashboard() {
     });
   };
 
-  // Agregar nuevo producto
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("Selected file:", file); // Agrega este log para verificar que se selecciona un archivo
+    }
+    setNewProduct({
+      ...newProduct,
+      image: file,
+    });
+  };
+
   const handleAddProduct = async () => {
     const token = localStorage.getItem('token');
+    const formData = new FormData();
+
+    formData.append('name', newProduct.name);
+    formData.append('description', newProduct.description);
+    formData.append('price', newProduct.price);
+    formData.append('category_id', newProduct.category_id ? newProduct.category_id : null); // Si no hay categoría, enviar null
+    formData.append('is_featured', newProduct.is_featured ? 'true' : 'false');
+    if (newProduct.image) {
+      formData.append('image', newProduct.image); // Añadir la imagen solo si existe
+    }
+
     try {
-      await API.post('/admin/products', newProduct, {
+      await API.post('/admin/products', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchProducts(); // Refrescar la lista de productos
+      fetchProducts();
+      setNewProduct({ name: '', description: '', price: 0, category_id: '', is_featured: false, image: null });
     } catch (error) {
       console.error('Error adding product:', error);
     }
   };
 
-  // Agregar nueva categoría
-  const handleAddCategory = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      await API.post('/admin/categories', { name: newCategory }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchCategories(); // Refrescar la lista de categorías
-      setNewCategory(''); // Limpiar el input de categoría
-    } catch (error) {
-      console.error('Error adding category:', error);
-    }
-  };
-
-  // Eliminar categoría existente
-  const handleDeleteCategory = async (categoryId) => {
-    const token = localStorage.getItem('token');
-    try {
-      await API.delete(`/admin/categories/${categoryId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      fetchCategories(); // Refrescar la lista de categorías
-    } catch (error) {
-      console.error('Error deleting category:', error);
-    }
-  };
-
-  // Manejar la edición de productos
   const handleEditProduct = (product) => {
     setProductToEdit(product);
-    setIsEditing(true);  // Mostrar el modal de edición
+    setIsEditing(true);
+    setNewProduct({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category_id: product.category_id,
+      is_featured: product.is_featured,
+      image: product.image_url,  // Asignar la URL de la imagen actual
+    });
   };
 
-  // Guardar cambios en un producto
   const handleSaveChanges = async () => {
     const token = localStorage.getItem('token');
+    const formData = new FormData();
+  
+    formData.append('name', productToEdit.name);
+    formData.append('description', productToEdit.description);
+    formData.append('price', productToEdit.price);
+    formData.append('category_id', productToEdit.category_id || '');
+    formData.append('is_featured', productToEdit.is_featured ? 'true' : 'false');
+  
+    // Adjunta la imagen solo si se selecciona una nueva
+    if (newProduct.image && typeof newProduct.image !== 'string') {
+      console.log("Attaching new image to FormData:", newProduct.image); // Verifica que la imagen se adjunta
+      formData.append('image', newProduct.image); // Adjuntar solo si es una nueva imagen
+    }
+  
     try {
-      await API.put(`/admin/products/${productToEdit.id}`, productToEdit, {
+      await API.put(`/admin/products/${productToEdit.id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchProducts(); // Refrescar productos
-      setIsEditing(false); // Cerrar el modal
+      fetchProducts();
+      setIsEditing(false);
+      setProductToEdit(null);
     } catch (error) {
       console.error('Error updating product:', error);
     }
   };
+  
+  
+  
 
-  // Eliminar producto
   const handleDeleteProduct = async (productId) => {
     const token = localStorage.getItem('token');
     try {
@@ -148,7 +179,8 @@ function AdminDashboard() {
           Authorization: `Bearer ${token}`,
         },
       });
-      fetchProducts(); // Refrescar la lista de productos
+      fetchProducts();
+      fetchStats();
     } catch (error) {
       console.error('Error deleting product:', error);
     }
@@ -158,7 +190,7 @@ function AdminDashboard() {
     <div className="container mx-auto mt-8">
       <h1 className="text-3xl font-bold mb-4">Admin Dashboard</h1>
 
-      {/* Gráfico de estadísticas de ventas y visitas */}
+      {/* Gráfico de estadísticas */}
       <div className="mb-8">
         <h2 className="text-xl font-bold">Estadísticas de Ventas y Visitas</h2>
         <ResponsiveContainer width="100%" height={300}>
@@ -183,31 +215,29 @@ function AdminDashboard() {
           placeholder="Nombre"
           value={newProduct.name}
           onChange={handleInputChange}
-          className="border p-2"
+          className="border p-2 mb-2 w-full"
         />
-        <input
-          type="text"
+        <textarea
           name="description"
           placeholder="Descripción"
           value={newProduct.description}
           onChange={handleInputChange}
-          className="border p-2"
-        />
+          className="border p-2 mb-2 w-full"
+        ></textarea>
         <input
           type="number"
           name="price"
           placeholder="Precio"
           value={newProduct.price}
           onChange={handleInputChange}
-          className="border p-2"
+          className="border p-2 mb-2 w-full"
         />
 
-        {/* Desplegable para seleccionar la categoría */}
         <select
           name="category_id"
           value={newProduct.category_id}
           onChange={handleInputChange}
-          className="border p-2"
+          className="border p-2 mb-2 w-full"
         >
           <option value="">Seleccionar Categoría</option>
           {categories.map(category => (
@@ -216,13 +246,22 @@ function AdminDashboard() {
             </option>
           ))}
         </select>
-        
-        <label>
+
+        <input
+          type="file"
+          name="image"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="border p-2 mb-2 w-full"
+        />
+
+        <label className="flex items-center mb-2">
           <input
             type="checkbox"
             name="is_featured"
             checked={newProduct.is_featured}
             onChange={handleInputChange}
+            className="mr-2"
           />
           Producto destacado
         </label>
@@ -231,46 +270,22 @@ function AdminDashboard() {
         </button>
       </div>
 
-      {/* Gestión de categorías */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold">Gestionar Categorías</h2>
-        <input
-          type="text"
-          placeholder="Nueva Categoría"
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
-          className="border p-2"
-        />
-        <button onClick={handleAddCategory} className="bg-blue-500 text-white px-4 py-2">
-          Agregar Categoría
-        </button>
-
-        <ul className="mt-4">
-          {categories.map((category) => (
-            <li key={category.id} className="border p-4 mb-4 flex justify-between">
-              <span>{category.name}</span>
-              <button
-                onClick={() => handleDeleteCategory(category.id)}
-                className="bg-red-500 text-white px-4 py-2"
-              >
-                Eliminar
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-
       {/* Lista de productos existentes */}
       <h2 className="text-xl font-bold mb-4">Lista de Productos</h2>
       <ul>
         {products.map((product) => (
-          <li key={product.id} className="border p-4 mb-4 flex justify-between">
-            <div>
-              <h3 className="text-lg font-bold">{product.name}</h3>
-              <p>{product.description}</p>
-              <p>Precio: ${product.price}</p>
-              <p>Categoría: {product.category}</p>
-              <p>Destacado: {product.is_featured ? 'Sí' : 'No'}</p>
+          <li key={product.id} className="border p-4 mb-4 flex justify-between items-center">
+            <div className="flex items-center">
+              {product.image_url && (
+                <img src={product.image_url} alt={product.name} className="w-16 h-16 object-cover mr-4" />
+              )}
+              <div>
+                <h3 className="text-lg font-bold">{product.name}</h3>
+                <p>{product.description}</p>
+                <p>Precio: ${product.price}</p>
+                <p>Categoría: {product.category}</p>
+                <p>Destacado: {product.is_featured ? 'Sí' : 'No'}</p>
+              </div>
             </div>
             <div>
               <button
@@ -293,7 +308,7 @@ function AdminDashboard() {
       {/* Modal de edición */}
       {isEditing && productToEdit && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-8">
+          <div className="bg-white p-8 rounded shadow-lg w-96">
             <h2 className="text-2xl mb-4">Editar Producto</h2>
             <input
               type="text"
@@ -309,7 +324,7 @@ function AdminDashboard() {
               value={productToEdit.description}
               onChange={(e) => setProductToEdit({ ...productToEdit, description: e.target.value })}
               className="border p-2 mb-4 w-full"
-            />
+            ></textarea>
             <input
               type="number"
               name="price"
@@ -318,12 +333,51 @@ function AdminDashboard() {
               onChange={(e) => setProductToEdit({ ...productToEdit, price: e.target.value })}
               className="border p-2 mb-4 w-full"
             />
-            <button onClick={handleSaveChanges} className="bg-green-500 text-white px-4 py-2">
-              Guardar Cambios
-            </button>
-            <button onClick={() => setIsEditing(false)} className="bg-gray-500 text-white px-4 py-2 ml-2">
-              Cancelar
-            </button>
+
+            <select
+              name="category_id"
+              value={productToEdit.category_id}
+              onChange={(e) => setProductToEdit({ ...productToEdit, category_id: e.target.value })}
+              className="border p-2 mb-4 w-full"
+            >
+              <option value="">Seleccionar Categoría</option>
+              {categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <input
+              type="file"
+              name="image"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                setProductToEdit({ ...productToEdit, image: file });
+              }}
+              className="border p-2 mb-4 w-full"
+            />
+
+            <label className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                name="is_featured"
+                checked={productToEdit.is_featured}
+                onChange={(e) => setProductToEdit({ ...productToEdit, is_featured: e.target.checked })}
+                className="mr-2"
+              />
+              Producto destacado
+            </label>
+
+            <div className="flex justify-end">
+              <button onClick={handleSaveChanges} className="bg-green-500 text-white px-4 py-2 mr-2">
+                Guardar Cambios
+              </button>
+              <button onClick={() => setIsEditing(false)} className="bg-gray-500 text-white px-4 py-2">
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
