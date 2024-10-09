@@ -26,6 +26,7 @@ class Product(db.Model):
     views = db.Column(db.Integer, default=0)
     sales = db.Column(db.Integer, default=0)
     image_url = db.Column(db.String(255))
+    composition = db.Column(db.String(255)) 
 
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)

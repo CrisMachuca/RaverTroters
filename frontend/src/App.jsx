@@ -8,6 +8,7 @@ import Account from './pages/Account';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
+import ProductDetail from './pages/productDetail';
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
         </Routes>
       </Router>
     </CartProvider>

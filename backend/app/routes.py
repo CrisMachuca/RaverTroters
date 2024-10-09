@@ -81,7 +81,8 @@ def get_products():
         'is_featured': product.is_featured,
         'views': product.views,
         'sales': product.sales,
-        'image_url': product.image_url
+        'image_url': product.image_url,
+        'composition': product.composition
     } for product in products])
 
 # Obtener productos destacados
@@ -225,3 +226,20 @@ def delete_category(category_id):
     db.session.delete(category)
     db.session.commit()
     return jsonify({'message': 'Category deleted successfully'}), 200
+
+
+# Obtener un producto por su ID
+@main.route('/products/<int:product_id>', methods=['GET'])
+def get_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    return jsonify({
+        'id': product.id,
+        'name': product.name,
+        'description': product.description,
+        'price': product.price,
+        'category_id': product.category_id,
+        'is_featured': product.is_featured,
+        'image_url': product.image_url,
+        'composition': product.composition  # Asegúrate de tener este campo en el modelo
+    })
+
