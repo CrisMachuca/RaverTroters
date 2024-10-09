@@ -91,7 +91,7 @@ function AdminDashboard() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      console.log("Selected file:", file); // Agrega este log para verificar que se selecciona un archivo
+      console.log("Selected file:", file); // Agrego este log para verificar que se selecciona un archivo
     }
     setNewProduct({
       ...newProduct,
@@ -148,10 +148,15 @@ function AdminDashboard() {
     formData.append('category_id', productToEdit.category_id || '');
     formData.append('is_featured', productToEdit.is_featured ? 'true' : 'false');
   
-    // Adjunta la imagen solo si se selecciona una nueva
-    if (newProduct.image && typeof newProduct.image !== 'string') {
-      console.log("Attaching new image to FormData:", newProduct.image); // Verifica que la imagen se adjunta
-      formData.append('image', newProduct.image); // Adjuntar solo si es una nueva imagen
+    // Solo adjunta la imagen si es una nueva
+    if (productToEdit.image && typeof productToEdit.image !== 'string') {
+      console.log("Attaching new image:", productToEdit.image); // Verifico que se adjunta correctamente
+      formData.append('image', productToEdit.image); 
+  }
+  
+    // Imprimir todos los valores de FormData
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
     }
   
     try {
@@ -349,15 +354,19 @@ function AdminDashboard() {
             </select>
 
             <input
-              type="file"
-              name="image"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                setProductToEdit({ ...productToEdit, image: file });
-              }}
-              className="border p-2 mb-4 w-full"
-            />
+  type="file"
+  name="image"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log("Selected file for editing:", file); // Verificar si se selecciona un archivo
+    }
+    setProductToEdit({ ...productToEdit, image: file });
+  }}
+  className="border p-2 mb-4 w-full"
+/>
+
 
             <label className="flex items-center mb-4">
               <input
