@@ -10,6 +10,11 @@ import cloudinary.api
 
 main = Blueprint('main', __name__)
 
+
+@main.route('/')
+def index():
+    return "Bienvenido a la API de RaverTroters", 200
+
 # Admin - Check if user is admin
 def admin_required(fn):    
     @wraps(fn)
@@ -243,3 +248,88 @@ def get_product(product_id):
         'composition': product.composition  # Asegúrate de tener este campo en el modelo
     })
 
+@main.route('/cart', methods=['POST'])
+@jwt_required()
+def add_to_cart():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    product_id = data.get('product_id')
+    
+    if not product_id:
+        return jsonify({"message": "Product ID is required"}), 400
+    
+    product = Product.query.get(product_id)
+    if not product:
+        return jsonify({"message": "Product not found"}), 404
+
+    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
+    
+    if cart_item:
+        # Incrementar la cantidad si el producto ya está en el carrito
+        cart_item.quantity += 1
+    else:
+        # Si no está en el carrito, agregarlo
+        cart_item = Cart(user_id=user_id, product_id=product_id, quantity=1)
+        db.session.add(cart_item)
+    
+    db.session.commit()
+    return jsonify({"message": "Product added to cart"}), 201
+
+@main.route('/cart', methods=['GET'])
+@jwt_required()
+def get_cart():
+    user_id = get_jwt_identity()
+    cart_items = Cart.query.filter_by(user_id=user_id).all()
+
+    if not cart_items:
+        return jsonify({"message": "Cart is empty"}), 200
+
+    cart_list = [{
+        'product_id': item.product.id,
+        'product_name': item.product.name,
+        'price': item.product.price,
+        'quantity': item.quantity
+    } for item in cart_items]
+
+    return jsonify(cart_list), 200
+
+@main.route('/cart', methods=['PUT'])
+@jwt_required()
+def update_cart_item():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    product_id = data.get('product_id')
+    new_quantity = data.get('quantity')
+
+    if not product_id or new_quantity is None:
+        return jsonify({"message": "Product ID and new quantity are required"}), 400
+
+    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
+    
+    if not cart_item:
+        return jsonify({"message": "Product not found in cart"}), 404
+
+    if new_quantity < 1:
+        db.session.delete(cart_item)
+    else:
+        cart_item.quantity = new_quantity
+
+    db.session.commit()
+    return jsonify({"message": "Cart updated successfully"}), 200
+
+@main.route('/cart/<int:product_id>', methods=['DELETE'])
+@jwt_required()
+def remove_from_cart(product_id):
+    user_id = get_jwt_identity()
+    
+    # Buscar el producto en el carrito del usuario
+    cart_item = Cart.query.filter_by(user_id=user_id, product_id=product_id).first()
+
+    if not cart_item:
+        return jsonify({"message": "Product not found in cart"}), 404
+
+    # Eliminar el producto del carrito
+    db.session.delete(cart_item)
+    db.session.commit()
+    
+    return jsonify({"message": "Product removed from cart"}), 200

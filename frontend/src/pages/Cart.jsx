@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useCart } from '../context/cartContext';
 
 function Cart() {
   const { cart, addToCart, removeFromCart, decreaseQuantity, getTotal } = useCart();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+    }
+  }, []);
 
   return (
     <div className="container mx-auto mt-8">
@@ -13,30 +20,27 @@ function Cart() {
         <>
           <ul>
             {cart.map(product => (
-              <li key={product.id} className="border-b py-4 flex justify-between items-center">
+              <li key={product.product_id} className="border-b py-4 flex justify-between items-center">
                 <div>
-                  <h2 className="text-xl font-bold">{product.name}</h2>
+                  <h2 className="text-xl font-bold">{product.product_name}</h2>
                   <p>${product.price} x {product.quantity}</p>
                 </div>
                 <div className="flex items-center">
-                  {/* Botón para disminuir la cantidad */}
                   <button
                     className={`${
                       product.quantity === 1 ? 'bg-gray-400 cursor-not-allowed' : 'bg-yellow-500'
                     } text-white font-bold py-1 px-3 rounded-full mr-2`}
                     onClick={() => decreaseQuantity(product)}
-                    disabled={product.quantity === 1} // Deshabilitar si solo hay 1 unidad
+                    disabled={product.quantity === 1} 
                   >
                     -
                   </button>
-                  {/* Botón para aumentar la cantidad */}
                   <button
                     className="bg-green-500 text-white font-bold py-1 px-3 rounded-full mr-2"
-                    onClick={() => addToCart(product)} // Aumentar la cantidad
+                    onClick={() => addToCart(product)}
                   >
                     +
                   </button>
-                  {/* Botón para eliminar el producto */}
                   <button
                     className="bg-red-500 text-white font-bold py-1 px-3 rounded-full"
                     onClick={() => removeFromCart(product)}
