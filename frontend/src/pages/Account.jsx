@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import API from '../api';
+import { useNavigate } from 'react-router-dom';
 
 function Account() {
     const [userData, setUserdata] = useState(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -24,11 +26,12 @@ function Account() {
           } else {
             console.log('Notoken found');
             setLoading(false);
+            navigate('/login');
           }
         };
     
         fetchUserData();
-      }, []);
+      }, [navigate]);
 
       return (
         <div className="container mx-auto mt-8">

@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import API from '../api';
 import { useCart } from '../context/cartContext';
 import ProductCard from '../components/ProductCard';
+import Reviews from '../components/Reviews';
+import AddReview from '../components/AddReview';
 
 function ProductDetail() {
   const { id } = useParams(); // Obtener el ID del producto desde la URL
@@ -67,6 +69,13 @@ function ProductDetail() {
             Añadir al carrito
           </button>
         </div>
+      </div>
+
+      {/* Sección de Reseñas */}
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold mb-4">Reseñas</h2>
+        <Reviews productId={product.id} />
+        <AddReview productId={product.id} />
       </div>
 
       {/* Productos relacionados */}

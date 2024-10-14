@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import User, Product, Cart, Category
+from .models import User, Product, Cart, Category, Review
 from . import db
 import cloudinary
 import cloudinary.uploader
@@ -67,11 +67,14 @@ def get_account():
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
 
-    return jsonify({
-        'username': user.username,
-        'email': user.email,
-        'is_admin': user.is_admin,
-    }), 200
+    if user:
+        return jsonify({
+            'username': user.username,
+            'email': user.email,
+            'is_admin': user.is_admin,
+        }), 200
+    else: 
+        return jsonify({"message": "User not found"}), 404
 
 # Products
 @main.route('/products', methods=['GET'])
@@ -333,3 +336,45 @@ def remove_from_cart(product_id):
     db.session.commit()
     
     return jsonify({"message": "Product removed from cart"}), 200
+
+
+# RESEÑAS
+
+# OBTENER RESEÑAS
+@main.route('/products/<int:product_id>/reviews', methods=['GET'])
+def get_reviews(product_id):
+    product = Product.query.get_or_404(product_id)
+    reviews = Review.query.filter_by(product_id=product_id).all()
+    
+    review_list = [{
+        'id': review.id,
+        'rating': review.rating,
+        'comment': review.comment,
+        'created_at': review.created_at,
+        'user': {
+                'username': review.user.username  # Incluyendo el nombre de usuario del autor de la reseña
+            }
+    } for review in reviews]
+    return jsonify(review_list), 200
+
+# CREAR NUEVA RESEÑA
+@main.route('/products/<int:product_id>/reviews', methods=['POST'])
+@jwt_required()
+def create_review(product_id):
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    # Validar que el usuario no haya dejado ya una reseña para este producto
+    existing_review = Review.query.filter_by(product_id=product_id, user_id=user_id).first()
+    if existing_review:
+        return jsonify({"message": "You have already reviewed this product."}), 400
+
+    new_review = Review(
+        rating=data['rating'],
+        comment=data.get('comment', ''),
+        product_id=product_id,
+        user_id=user_id
+    )
+    db.session.add(new_review)
+    db.session.commit()
+    return jsonify({"message": "Review added successfully"}), 201

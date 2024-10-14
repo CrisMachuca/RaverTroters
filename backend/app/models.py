@@ -14,6 +14,7 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     cart_items = relationship('Cart', back_populates='user', cascade='all, delete-orphan')
+    reviews = relationship('Review', back_populates='user', cascade='all, delete-orphan')
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,6 +29,8 @@ class Product(db.Model):
     image_url = db.Column(db.String(255))
     composition = db.Column(db.String(255)) 
 
+    reviews = relationship('Review', back_populates='product', cascade='all, delete-orphan')
+
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -36,3 +39,14 @@ class Cart(db.Model):
 
     user = relationship('User', back_populates='cart_items')
     product = relationship('Product')
+
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text, nullable=True) # esto puede estar vacio
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    product = db.relationship('Product', back_populates='reviews')
+    user = db.relationship('User', back_populates='reviews')
