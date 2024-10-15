@@ -17,7 +17,7 @@ utilizando React en el frontend y Flask en el backend.
 - Integración con Stripe para pagos.
 
 
-## Documentation
+## Documentación
 
 ### Pasos para la instalación
 
