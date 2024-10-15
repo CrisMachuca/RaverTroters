@@ -34,6 +34,7 @@ flask run
 
 ### Ejecutar front
 cd front
+
 npm run dev
 
 ### Requisitos previos
