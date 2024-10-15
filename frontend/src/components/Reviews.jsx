@@ -51,7 +51,7 @@ function Reviews({ productId }) {
                             </div>
                             <p className="text-gray-600 mb-2">{review.comment}</p>
                             <p className="text-sm text-gray-500">
-    Publicado por: {review.user} el {new Date(review.created_at).toLocaleDateString()}
+    Publicado por: {review.user.username} el {new Date(review.created_at).toLocaleDateString()}
 </p>
                         </div>
                     ))}
