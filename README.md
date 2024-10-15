@@ -29,7 +29,9 @@ cd ravertroters
 
 ### Ejecutar back
 cd backend
+
 venv\Scripts\activate
+
 flask run
 
 ### Ejecutar front
