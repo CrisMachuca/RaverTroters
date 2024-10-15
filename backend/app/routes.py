@@ -79,7 +79,29 @@ def get_account():
 # Products
 @main.route('/products', methods=['GET'])
 def get_products():
-    products = Product.query.all()
+    category_id = request.args.get('category_id')
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    is_featured = request.args.get('is_featured', type=bool)
+
+    query = Product.query
+
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+    
+    if min_price is not None and max_price is not None:
+        query = query.filter(Product.price >= min_price, Product.price <= max_price)
+    elif min_price is not None:  # Si solo se define min_price
+        query = query.filter(Product.price >= min_price)
+    elif max_price is not None:  # Si solo se define max_price
+        query = query.filter(Product.price <= max_price)
+        
+        
+    if is_featured:
+        query = query.filter_by(is_featured=True)
+
+    products = query.all()
+
     return jsonify([{
         'id': product.id,
         'name': product.name,
@@ -89,8 +111,7 @@ def get_products():
         'is_featured': product.is_featured,
         'views': product.views,
         'sales': product.sales,
-        'image_url': product.image_url,
-        'composition': product.composition
+        'image_url': product.image_url
     } for product in products])
 
 # Obtener productos destacados
@@ -208,7 +229,7 @@ def get_product_stats():
 # CATEGORIES
 
 @main.route('/admin/categories', methods=['GET'])
-@admin_required
+
 def get_categories():
     categories = Category.query.all()
     return jsonify([{'id': category.id, 'name': category.name} for category in categories])
