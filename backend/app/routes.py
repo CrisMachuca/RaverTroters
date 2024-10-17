@@ -79,12 +79,17 @@ def get_account():
 # Products
 @main.route('/products', methods=['GET'])
 def get_products():
+    search = request.args.get('search', '')
     category_id = request.args.get('category_id')
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)
     is_featured = request.args.get('is_featured', type=bool)
 
+
     query = Product.query
+
+    if search:
+        query = query.filter(Product.name.ilike(f'%{search}%') | Product.description.ilike(f'%{search}%'))
 
     if category_id:
         query = query.filter_by(category_id=category_id)
@@ -113,6 +118,20 @@ def get_products():
         'sales': product.sales,
         'image_url': product.image_url
     } for product in products])
+
+@main.route('/product-suggestions', methods=['GET'])
+def get_product_suggestions():
+    search = request.args.get('search', '')
+    if not search:
+        return jsonify([])
+
+    # Buscar productos que coincidan parcialmente con el nombre o la descripción
+    suggestions = Product.query.filter(Product.name.ilike(f'%{search}%') | Product.description.ilike(f'%{search}%')).limit(5).all()
+
+    return jsonify([{
+        'id': product.id,
+        'name': product.name
+    } for product in suggestions])
 
 # Obtener productos destacados
 @main.route('/featured-products', methods=['GET'])

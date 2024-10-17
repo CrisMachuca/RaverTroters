@@ -3,12 +3,17 @@ import API from '../api';
 import { Link } from 'react-router-dom';
 import ProductFilters from '../components/ProductFilters';
 import ProductCard from '../components/ProductCard';
+import SearchBar from '../components/SearchBar';
 
 function ProductList() {
   const [products, setProducts] = useState([]);
 
-  const fetchProducts = async (filters) => {
+  const fetchProducts = async (filters = {}, searchTerm = '') => {
     let query = '/products?';
+
+    if (searchTerm) {
+      query += `search=${searchTerm}&`;
+    }
 
     if (filters.category) {
         query += `category_id=${filters.category}&`;
@@ -42,8 +47,15 @@ function ProductList() {
     fetchProducts(filters);
   };
 
+  // Función que maneja la búsqueda
+  const handleSearch = (searchTerm) => {
+    fetchProducts({}, searchTerm)
+  }
+
   return (
     <div className="container mx-auto mt-8">
+      {/* Barra de búsqueda */}
+      <SearchBar onSearch={handleSearch} />
       {/* Filtros de productos */}
       <ProductFilters onFilterChange={handleFilterChange} />
 
