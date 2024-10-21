@@ -30,6 +30,7 @@ class Product(db.Model):
     composition = db.Column(db.String(255)) 
 
     reviews = relationship('Review', back_populates='product', cascade='all, delete-orphan')
+    offers = relationship('Offer', back_populates='product', cascade='all, delete-orphan')
 
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,3 +51,15 @@ class Review(db.Model):
 
     product = db.relationship('Product', back_populates='reviews')
     user = db.relationship('User', back_populates='reviews')
+
+class Offer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    description = db.Column(db.String(255), nullable=False)
+    discount_percentage = db.Column(db.Float, nullable=False)
+    min_purchase_amount = db.Column(db.Float, nullable=False, default=0)
+    offer_type = db.Column(db.String(50), nullable=False)
+    applicable_to_product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=True)
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=False)
+
+    product = db.relationship('Product', back_populates='offers')

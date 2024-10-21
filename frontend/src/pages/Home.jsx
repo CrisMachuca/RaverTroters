@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import API from '../api';
 import ProductCard from '../components/ProductCard';
 import FeaturedProducts from '../components/FeaturedProducts';
+import OfferBanner from '../components/OfferBanner';
 import styles from '../styles/Home.module.css';
 
 function Home() {
@@ -29,6 +30,7 @@ function Home() {
           <a href="/products" className="mt-8 inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded-full">Ver Productos</a>
         </div>
       </section>
+      <OfferBanner />
       <FeaturedProducts />
       <section className="bg-gray-200 py-12">
             <h2 className="text-3xl font-bold text-center mb-8">Lo que dicen nuestros clientes</h2>

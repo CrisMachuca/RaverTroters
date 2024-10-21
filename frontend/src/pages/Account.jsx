@@ -10,6 +10,8 @@ function Account() {
     useEffect(() => {
         const fetchUserData = async () => {
           const token = localStorage.getItem('token');
+          // Verificar si el token existe antes de hacer la solicitud
+        console.log("Token from localStorage:", token);
           if (token) {
             try {
               const response = await API.get('/account', {

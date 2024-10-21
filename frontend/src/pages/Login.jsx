@@ -16,6 +16,7 @@ function Login() {
             });
             localStorage.setItem('token', response.data.access_token);
             localStorage.setItem('username',username);
+            console.log("Token stored:", localStorage.getItem('token'));
             alert('Logged in successfully!');
             navigate('/');
         } catch (error) {

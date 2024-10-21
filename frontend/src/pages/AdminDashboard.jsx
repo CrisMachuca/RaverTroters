@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import API from '../api';
+import OfferForm from '../components/OfferForm';
+import OfferList from '../components/OfferList';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 function AdminDashboard() {
@@ -210,6 +212,9 @@ function AdminDashboard() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      {/* ofertas */}
+      <OfferForm />
+      <OfferList />
 
       {/* Formulario para agregar un nuevo producto */}
       <div className="mb-8">

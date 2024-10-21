@@ -2,11 +2,12 @@ from flask import Blueprint, jsonify, request
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import User, Product, Cart, Category, Review
+from .models import User, Product, Cart, Category, Review, Offer
 from . import db
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+  
 
 main = Blueprint('main', __name__)
 
@@ -65,6 +66,7 @@ def protected():
 @jwt_required()
 def get_account():
     user_id = get_jwt_identity()
+    print(f"User ID: {user_id}")  # Log para verificar si se obtiene el token
     user = User.query.get(user_id)
 
     if user:
@@ -290,6 +292,86 @@ def get_product(product_id):
         'image_url': product.image_url,
         'composition': product.composition  # Asegúrate de tener este campo en el modelo
     })
+
+# ADMIN - OFFERS
+
+# Admin listar ofertas
+@main.route('/admin/offers', methods=['GET'])
+@admin_required
+def get_offers():
+    offers = Offer.query.all()
+    return jsonify([{
+        'id': offer.id,
+        'description': offer.description,
+        'discount_percentage': offer.discount_percentage,
+        'min_purchase_amount': offer.min_purchase_amount,
+        'offer_type': offer.offer_type,
+        'applicable_to_product_id': offer.applicable_to_product_id,
+        'start_date': offer.start_date,
+        'end_date': offer.end_date
+    } for offer in offers])
+
+# Admin crear ofertas
+@main.route('/admin/offers', methods=['POST'])
+@admin_required
+def add_offer():
+    data = request.get_json()
+    new_offer = Offer(
+        description=data['description'],
+        discount_percentage=data['discount_percentage'],
+        min_purchase_amount=data.get('min_purchase_amount'),
+        offer_type=data['offer_type'],
+        applicable_to_product_id=data.get('applicable_to_product_id'),
+        start_date=data['start_date'],
+        end_date=data['end_date']
+    )
+    db.session.add(new_offer)
+    db.session.commit()
+    return jsonify({"messsge": "Offer added successfully"}), 201
+
+# Admin eliminar oferta
+@main.route('/admin/offers/<int:offer_id>', methods=['DELETE'])
+@admin_required
+def delete_offer(offer_id):
+    offer = Offer.query.get_or_404(offer_id)
+    db.session.delete(offer)
+    db.session.commit()
+    return jsonify({"message": "Offer deleted successfully"}), 200
+
+from datetime import datetime
+
+# Admin editar oferta
+@main.route('/admin/offers/<int:offer_id>', methods=['PUT'])
+@admin_required
+def update_offer(offer_id):
+    data = request.get_json()
+    offer = Offer.query.get_or_404(offer_id)
+    
+    offer.description = data.get('description', offer.description)
+    offer.discount_percentage = data.get('discount_percentage', offer.discount_percentage)
+    offer.min_purchase_amount = data.get('min_purchase_amount', offer.min_purchase_amount)
+    offer.offer_type = data.get('offer_type', offer.offer_type)
+    offer.start_date = data.get('start_date', offer.start_date)
+    offer.end_date = data.get('end_date', offer.end_date)
+
+    db.session.commit()
+    return jsonify({"message": "Offer updated successfully"}), 200
+
+
+# obtener ofertas activas
+@main.route('/offers', methods=['GET'])
+def get_active_offers():
+    current_date = datetime.now()
+    offers = Offer.query.filter(Offer.start_date <= current_date, Offer.end_date >= current_date).all()
+    return jsonify([{
+        'id': offer.id,
+        'description': offer.description,
+        'discount_percentage': offer.discount_percentage,
+        'min_purchase_amount': offer.min_purchase_amount,
+        'start_date': offer.start_date,
+        'end_date': offer.end_date
+    } for offer in offers])
+
 
 @main.route('/cart', methods=['POST'])
 @jwt_required()
