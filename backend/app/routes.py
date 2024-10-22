@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import User, Product, Cart, Category, Review, Offer
+from .models import User, Product, Cart, Category, Review, Offer, Banner
 from . import db
 import cloudinary
 import cloudinary.uploader
@@ -500,3 +500,85 @@ def create_review(product_id):
     db.session.add(new_review)
     db.session.commit()
     return jsonify({"message": "Review added successfully"}), 201
+
+
+# ADMINISTRAR BANNERS
+
+@main.route('/admin/banners', methods=['POST'])
+@admin_required
+def create_banner():
+    data = request.form
+    image = request.files.get('image')
+
+    # Subir imagen a Cloudinary (si se provee)
+    image_url = None
+    if image:
+        upload_result = cloudinary.uploader.upload(image)
+        image_url = upload_result.get('secure_url')
+
+    # Verificar si offer_id está vacío o no
+    offer_id = data.get('offer_id')
+    if not offer_id or offer_id == 'null':  # Si es una cadena vacía o 'null', establecer como None
+        offer_id = None
+
+    new_banner = Banner(
+        type_of_offer=data['type_of_offer'],
+        text=data['text'],
+        background_color=data['background_color'],
+        image_url=image_url,
+        position=data['position'],
+        offer_id=offer_id  
+    )
+    db.session.add(new_banner)
+    db.session.commit()
+    return jsonify({"message": "Banner created successfully"}), 201
+
+@main.route('/admin/banners/<int:banner_id>', methods=['PUT'])
+@admin_required
+def update_banner(banner_id):
+    banner = Banner.query.get_or_404(banner_id)
+    data = request.form
+    image = request.files.get('image')
+
+    # Actualizar los campos solo si están presentes en el formulario
+    if 'type_of_offer' in data:
+        banner.type_of_offer = data['type_of_offer']
+    if 'text' in data:
+        banner.text = data['text']
+    if 'background_color' in data:
+        banner.background_color = data['background_color']
+    if 'position' in data:
+        banner.position = data['position']
+    if 'offer_id' in data and data['offer_id']:
+        banner.offer_id = data['offer_id']
+
+    # Subir nueva imagen solo si se proporciona una
+    if image:
+        upload_result = cloudinary.uploader.upload(image)
+        banner.image_url = upload_result.get('secure_url')
+
+    db.session.commit()
+    return jsonify({"message": "Banner updated successfully"}), 200
+
+@main.route('/admin/banners/<int:banner_id>', methods=['DELETE'])
+@admin_required
+def delete_banner(banner_id):
+    banner = Banner.query.get_or_404(banner_id)
+    db.session.delete(banner)
+    db.session.commit()
+    return jsonify({"message": "Banner deleted successfully"}), 200
+
+# visualizar Banner
+
+@main.route('/banners', methods=['GET'])
+def get_banners():
+    banners = Banner.query.all()  # Aquí obtienes todos los banners
+    return jsonify([{
+        'id': banner.id,
+        'type_of_offer': banner.type_of_offer,
+        'text': banner.text,
+        'background_color': banner.background_color,
+        'image_url': banner.image_url,
+        'position': banner.position,
+        'offer_id': banner.offer_id
+    } for banner in banners])

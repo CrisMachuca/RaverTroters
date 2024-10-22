@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
 import ProductDetail from './pages/productDetail';
+import Banner from './components/Banner';
 
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/banner" element={<Banner />} />
           
         </Routes>
       </Router>

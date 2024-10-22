@@ -63,3 +63,14 @@ class Offer(db.Model):
     end_date = db.Column(db.DateTime, nullable=False)
 
     product = db.relationship('Product', back_populates='offers')
+
+class Banner(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    type_of_offer = db.Column(db.String(50), nullable=False) 
+    text = db.Column(db.String(255), nullable=False)  
+    background_color = db.Column(db.String(50), nullable=True) 
+    image_url = db.Column(db.String(255), nullable=True) 
+    position = db.Column(db.String(50), nullable=False, default="top")  
+
+    offer_id = db.Column(db.Integer, db.ForeignKey('offer.id'), nullable=True)  
+    offer = db.relationship('Offer', backref=db.backref('banners', lazy=True))  

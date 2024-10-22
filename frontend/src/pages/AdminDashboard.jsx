@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import API from '../api';
 import OfferForm from '../components/OfferForm';
 import OfferList from '../components/OfferList';
+import BannerList from '../components/BannerList';
+import BannerForm from '../components/BannerForm';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 function AdminDashboard() {
@@ -19,6 +21,17 @@ function AdminDashboard() {
   const [stats, setStats] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
+
+  const [banners, setBanners] = useState([]);
+
+    const fetchBanners = async () => {
+        try {
+            const response = await API.get('/banners');
+            setBanners(response.data);
+        } catch (error) {
+            console.error('Error fetching banners:', error);
+        }
+    };
 
   // Cargar productos, categorías y estadísticas al iniciar
   const fetchProducts = async () => {
@@ -80,6 +93,7 @@ function AdminDashboard() {
     fetchProducts();
     fetchCategories();
     fetchStats();
+    fetchBanners();
   }, []);
 
   const handleInputChange = (e) => {
@@ -212,6 +226,9 @@ function AdminDashboard() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      {/* Banners */}
+      <BannerForm />
+      <BannerList />
       {/* ofertas */}
       <OfferForm />
       <OfferList />
