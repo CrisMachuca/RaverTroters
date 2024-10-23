@@ -23,9 +23,14 @@ function OfferBanner() {
     return null;
   }
 
+  // Solo mostrar el texto de compra mínima si está definido y es mayor que 0
+  const minPurchaseText = offer.min_purchase_amount && offer.min_purchase_amount > 0 
+    ? ` por compras superiores a €${offer.min_purchase_amount}` 
+    : '';
+
   return (
     <div className="bg-yellow-300 p-4 text-center text-black font-bold">
-      {offer.description} - {offer.discount_percentage}% de descuento por compras superiores a ${offer.min_purchase_amount}
+      {offer.description} - {offer.discount_percentage}% de descuento{minPurchaseText}
     </div>
   );
 }

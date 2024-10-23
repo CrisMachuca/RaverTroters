@@ -38,8 +38,8 @@ function OfferList() {
             discount_percentage: offer.discount_percentage,
             min_purchase_amount: offer.min_purchase_amount,
             offer_type: offer.offer_type,
-            start_date: offer.start_date,
-            end_date: offer.end_date,
+            start_date: new Date(offer.start_date).toISOString().slice(0, 16), 
+            end_date: new Date(offer.end_date).toISOString().slice(0, 16),
         });
     };
 
