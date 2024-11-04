@@ -6,7 +6,7 @@ import { useWishlist } from '../context/wishlistContext';
 
 function Navbar() {
   const { getCartQuantity, clearCart, fetchCart } = useCart();
-  const { wishlistCount } = useWishlist();
+  const { wishlistCount } = useWishlist(); // Obtener el contador de la lista de deseos
   const [isAdmin, setIsAdmin] = useState(false); // Estado para verificar si es administrador
   const token = localStorage.getItem('token');
   const username = localStorage.getItem('username');
@@ -60,7 +60,7 @@ function Navbar() {
               
               <Link to="/cart" className="text-white mr-4">Carrito ({getCartQuantity()})</Link>
               <Link to="/account" className="text-white mr-4">Mi Cuenta</Link>
-              <Link to="/wishlist" className="text-white mr-4">Lista de deseos </Link>
+              <Link to="/wishlist" className="text-white mr-4">Lista de deseos ({wishlistCount})</Link>
               {isAdmin && (
                 <Link to="/admin/dashboard" className="text-white mr-4">Admin Dashboard</Link>
               )}

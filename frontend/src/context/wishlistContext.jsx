@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 
 const WishlistContext = createContext();
 
@@ -17,9 +17,10 @@ export function WishlistProvider({ children }) {
         return wishlist.some((item) => item.id === productId);
     };
 
+    const wishlistCount = useMemo(() => wishlist.length, [wishlist]);
 
     return (
-        <WishlistContext.Provider value={{ wishlist, addToWishlist, removeFromWishlist, isInWishlist}}>
+        <WishlistContext.Provider value={{ wishlist, addToWishlist, removeFromWishlist, isInWishlist, wishlistCount}}>
             {children}
         </WishlistContext.Provider>
     );
