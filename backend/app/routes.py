@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from .models import User, Product, Cart, Category, Review, Offer, Banner
+from .models import User, Product, Cart, Category, Review, Offer, Banner, Wishlist
 from . import db
 import cloudinary
 import cloudinary.uploader
@@ -458,6 +458,49 @@ def remove_from_cart(product_id):
     db.session.commit()
     
     return jsonify({"message": "Product removed from cart"}), 200
+
+
+# LISTAS DE DESEOS
+
+# Obtener lista de deseos
+@main.route('/wishlist', methods=['GET'])
+@jwt_required()
+def get_wishlist():
+    user_id = get_jwt_identity()
+    wishlist = wishlist.query.filter.by(user_id=user_id).all()
+    return jsonify([{
+        'id': item.id,
+        'product_id': item.product.id,
+        'product_name': item.product.price,
+    } for item in wishlist]), 200
+
+# Agregar producto a la lista de deseos
+@main.route('/wishlist', methods=['POST'])
+@jwt_required()
+def add_to_wishlist():
+    user_id = get_jwt_identity()
+    product_id = request.json.get('product_id')
+
+    # Verificar si el producto está en la lista de deseos
+    if Wishlist.query.filter_by(user_id=user_id, product_id=product_id).first():
+        return jsonify({"message": "Product already in wishlist"}), 400
+    # Agregar producto a la lista de deseos
+    wishlist_item = Wishlist(user_id=user_id, product_id=product_id)
+    db.session.add(wishlist_item)
+    db.session.commit()
+    return jsonify({"message": "Product added to wishlist"}), 200
+
+# Ruta para eliminar un producto de la lista de deseos
+@main.route('/wishlist/<int:product_id>', methods=['DETETE'])
+@jwt_required()
+def remove_from_wishlist(product_id):
+    user_id = get_jwt_identity()
+    wishlist_item = Wishlist.query.filter_by(user_id=user_id, product_id=product_id).firs()
+    if wishlist_item:
+        db.session.delete(wishlist_item)
+        db.session.commit()
+        return jsonify({"message": "Product removed from wishlist"}), 200
+    return jsonify({"message": "Product not in wishlist"}), 404
 
 
 # RESEÑAS

@@ -74,3 +74,11 @@ class Banner(db.Model):
 
     offer_id = db.Column(db.Integer, db.ForeignKey('offer.id'), nullable=True)  
     offer = db.relationship('Offer', backref=db.backref('banners', lazy=True))  
+
+class Wishlist(db.Model):
+    id= db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('wishlist', lazy='dynamic'))
+    product = relationship('Product', backref=db.backref('wishlists', lazy='dynamic'))
