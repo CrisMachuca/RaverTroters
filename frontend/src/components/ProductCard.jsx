@@ -2,7 +2,13 @@ import React from 'react';
 import { useCart } from '../context/cartContext';
 import { useWishlist } from '../context/wishlistContext';
 import { Link } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as solidHeart } from '@fortawesome/free-solid-svg-icons';
+import { faHeart as regularHeart } from '@fortawesome/free-regular-svg-icons';
+import { faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import styles from '../styles/ProductCard.module.css';
+
+
 
 function ProductCard({ product }) {
   const { addToCart } = useCart();
@@ -48,12 +54,16 @@ function ProductCard({ product }) {
           className="flex-1 bg-green-500 text-white font-bold py-2 px-2 rounded-full mt-4 transition-colors hover:bg-green-600"
           onClick={() => addToCart(product)}
         >
-          Lo quiero
+          <FontAwesomeIcon icon={faCartShopping} className="w-5 h-5 mr-2" /> {/* Icono del carrito */}
         </button>
-        {/* Botón de la lista de deseos */}
-        <button 
-          onClick={handleWishlistToggle}>
-            {inWishlist ? 'Quitar de la lista de deseos' : 'Añadir a la lista de deseos'}
+        {/* Botón de la lista de deseos con icono FontAwesome */}
+        <button onClick={handleWishlistToggle} className="mt-4">
+          <FontAwesomeIcon
+            icon={inWishlist ? solidHeart : regularHeart}
+            className={`w-6 h-6 transition-colors duration-200 ${
+              inWishlist ? 'text-red-500' : 'text-gray-400'
+            }`}
+          />
         </button>
       </div>
     </div>

@@ -17,7 +17,16 @@ export function WishlistProvider({ children }) {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            setWishlist(response.data);
+             // Obtener detalles completos de cada producto en la lista de deseos
+             const detailedWishlist = await Promise.all(response.data.map(async (item) => {
+                const productResponse = await API.get(`/products/${item.product_id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                return productResponse.data;
+            }));
+            setWishlist(detailedWishlist);
         } catch (error) {
             console.error('Error fetching wishlist:', error);
         }
