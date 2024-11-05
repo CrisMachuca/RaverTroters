@@ -15,6 +15,7 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     cart_items = relationship('Cart', back_populates='user', cascade='all, delete-orphan')
     reviews = relationship('Review', back_populates='user', cascade='all, delete-orphan')
+    wishlist_items = relationship('Wishlist', back_populates='user', cascade='all, delete-orphan')
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)

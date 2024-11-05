@@ -6,7 +6,7 @@ import { useWishlist } from '../context/wishlistContext';
 
 function Navbar() {
   const { getCartQuantity, clearCart, fetchCart } = useCart();
-  const { wishlistCount } = useWishlist(); // Obtener el contador de la lista de deseos
+  const { wishlistCount, fetchWishlist, resetWishlist } = useWishlist();
   const [isAdmin, setIsAdmin] = useState(false); // Estado para verificar si es administrador
   const token = localStorage.getItem('token');
   const username = localStorage.getItem('username');
@@ -23,6 +23,7 @@ function Navbar() {
           });
           setIsAdmin(response.data.is_admin); // Comprobar si el usuario es administrador
           await fetchCart();
+          await fetchWishlist();
         } catch (error) {
           console.error('Error fetching user data', error);
         }
@@ -36,6 +37,7 @@ function Navbar() {
     localStorage.removeItem('token');
     localStorage.removeItem('username')
     clearCart();
+    resetWishlist([]);
     navigate('/');
   };
 

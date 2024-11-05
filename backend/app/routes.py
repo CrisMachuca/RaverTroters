@@ -467,12 +467,13 @@ def remove_from_cart(product_id):
 @jwt_required()
 def get_wishlist():
     user_id = get_jwt_identity()
-    wishlist = wishlist.query.filter.by(user_id=user_id).all()
+    wishlist_items = Wishlist.query.filter_by(user_id=user_id).all()
     return jsonify([{
         'id': item.id,
         'product_id': item.product.id,
-        'product_name': item.product.price,
-    } for item in wishlist]), 200
+        'product_name': item.product.name,
+        'product_price': item.product.price,
+    } for item in wishlist_items]), 200
 
 # Agregar producto a la lista de deseos
 @main.route('/wishlist', methods=['POST'])
@@ -491,11 +492,11 @@ def add_to_wishlist():
     return jsonify({"message": "Product added to wishlist"}), 200
 
 # Ruta para eliminar un producto de la lista de deseos
-@main.route('/wishlist/<int:product_id>', methods=['DETETE'])
+@main.route('/wishlist/<int:product_id>', methods=['DELETE'])
 @jwt_required()
 def remove_from_wishlist(product_id):
     user_id = get_jwt_identity()
-    wishlist_item = Wishlist.query.filter_by(user_id=user_id, product_id=product_id).firs()
+    wishlist_item = Wishlist.query.filter_by(user_id=user_id, product_id=product_id).first()
     if wishlist_item:
         db.session.delete(wishlist_item)
         db.session.commit()

@@ -1,16 +1,63 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import API from '../api';
 
 const WishlistContext = createContext();
 
 export function WishlistProvider({ children }) {
     const [wishlist, setWishlist] = useState([]);
+    
 
-    const addToWishlist = (product) => {
-        setWishlist((prev) => [...prev, product]);
+    // Cargar la lista de deseos del backend
+    const fetchWishlist = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        try {
+            const response = await API.get('/wishlist', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            setWishlist(response.data);
+        } catch (error) {
+            console.error('Error fetching wishlist:', error);
+        }
     };
 
-    const removeFromWishlist = (productId) => {
-        setWishlist((prev) => prev.filter((item) => item.id !== productId));
+    // Reiniciar la lista de deseos (vaciarla) al cerrar sesión
+    const resetWishlist = () => setWishlist([]);
+
+    useEffect(() => {
+        fetchWishlist();
+    }, [])
+
+    const addToWishlist = async (product) => {
+        const token = localStorage.getItem('token');
+        try {
+            await API.post('/wishlist', {product_id: product.id}, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            setWishlist((prev) => [...prev, product]);
+        } catch (error) {
+            console.error('Error adding to wishlist:', error);
+        }
+        
+    };
+
+    const removeFromWishlist = async (productId) => {
+        const token = localStorage.getItem('token');
+        try {
+            await API.delete(`/wishlist/${productId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            setWishlist((prev) => prev.filter((item) => item.id !== productId));
+        } catch (error) {
+            console.error('Error removing from wishlist:', error);
+        }
+       
     };
 
     const isInWishlist = (productId) => {
@@ -20,7 +67,7 @@ export function WishlistProvider({ children }) {
     const wishlistCount = useMemo(() => wishlist.length, [wishlist]);
 
     return (
-        <WishlistContext.Provider value={{ wishlist, addToWishlist, removeFromWishlist, isInWishlist, wishlistCount}}>
+        <WishlistContext.Provider value={{ wishlist, setWishlist, addToWishlist, removeFromWishlist, isInWishlist, wishlistCount, fetchWishlist, resetWishlist}}>
             {children}
         </WishlistContext.Provider>
     );
