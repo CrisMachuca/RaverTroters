@@ -3,6 +3,7 @@ import API from '../api';
 import ProductCard from '../components/ProductCard';
 import FeaturedProducts from '../components/FeaturedProducts';
 import OfferBanner from '../components/OfferBanner';
+import CategoryCards from '../components/CategoryCards';
 import styles from '../styles/Home.module.css';
 
 function Home() {
@@ -64,6 +65,9 @@ function Home() {
           <p className="text-2xl">{topBanner.text}</p>
         </div>
       )}
+
+      {/* Componente de cards de categoría */}
+      <CategoryCards />
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
