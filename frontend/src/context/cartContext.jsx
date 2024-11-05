@@ -67,7 +67,7 @@ const CartProvider = ({ children }) => {
     }
   
     try {
-      await API.post('/cart', { product_id: product.product_id }, {
+      await API.post('/cart', { product_id: product.id }, {
         headers: {
           Authorization: `Bearer ${token}`,  
           'Content-Type': 'application/json', 
